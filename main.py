@@ -100,7 +100,10 @@ else:
 
 
 def get_api_key():
-    return open("KEY.txt", "r").read().strip()
+    if use_openai:
+        return open("KEY.txt", "r").read().strip()
+    else:
+        return ""
 
 api_key = get_api_key()
     
