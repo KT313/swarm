@@ -15,11 +15,11 @@ max_tokens = -1     # only used for openai
 n = 1               # only used for openai
 temperature = 0.7   # only used for openai
 
-use_openai = True # False will use ollama
+use_openai = False # False will use ollama
 
 # model = "gpt-3.5-turbo"
 # model = "gpt-4-1106-preview"
-model = "orca-mini:latest"
+model = "yarn-mistral:7b-128k"
 
 
 
