@@ -1,9 +1,10 @@
 ### ollama instead of GPT:
-install ollama with any model (recommended 7B so it can use the command to call agents)
-in the make sure this is set: 
+install ollama with any model (recommended 7B so it can use the command to call agents)  
+in the make sure this is set:  
+```
 use_openai = False 
 model = "llama2" (or any other model you installed in ollama)
-
+```
 ### example:
 
 ```
