@@ -11,12 +11,15 @@ verbose = 0
 use_user_input = True
 confirm_each_agent = False
 
-max_tokens = -1
-n = 1
-temperature = 0.7
+max_tokens = -1     # only used for openai
+n = 1               # only used for openai
+temperature = 0.7   # only used for openai
+
+use_openai = False # False will use ollama
 
 # model = "gpt-3.5-turbo"
-model = "gpt-4-1106-preview"
+# model = "gpt-4-1106-preview"
+model = "orca-mini:latest"
 
 
 
@@ -39,6 +42,20 @@ model = "gpt-4-1106-preview"
 
 
 # ------------------ DO NOT EDIT BELOW THIS LINE ------------------
+
+if not use_openai:
+    # start ollama
+    print("Starting ollama...")
+    try:
+        # run in terminal
+        os.system("ollama serve")
+        print("ollama started")
+        print(f"model: {model}")
+    except Exception as e:
+        print(f"Error: {e}")
+        
+
+
 
 # check if KEY.txt exists
 if not os.path.exists("KEY.txt"):
@@ -88,35 +105,76 @@ def get_api_key():
 api_key = get_api_key()
     
 def make_curl_command(history_in):
-    history_json_in = json.dumps(history_in)
+    if use_openai:
+        history_json_in = json.dumps(history_in)
 
-    if verbose >= 3:
-        print(f"JSON being sent:\n{history_in}")
+        if verbose >= 3:
+            print(f"JSON being sent:\n{history_in}")
 
-    data = {
-        "model": model,
-        "messages": history_in,
-        "temperature": temperature,
-        "n": n
-    }
+        data = {
+            "model": model,
+            "messages": history_in,
+            "temperature": temperature,
+            "n": n
+        }
 
-    if max_tokens > 0:
-        data["max_tokens"] = max_tokens
+        if max_tokens > 0:
+            data["max_tokens"] = max_tokens
 
-    curl_command = ["curl"]
+        curl_command = ["curl"]
 
-    if verbose < 1:
-        curl_command.append("-s")
+        if verbose < 1:
+            curl_command.append("-s")
 
-    curl_command.extend([
-        "https://api.openai.com/v1/chat/completions",
-        "-H", "Content-Type: application/json",
-        "-H", f"Authorization: Bearer {api_key}",
-        "-d", json.dumps(data)
-    ])
+        curl_command.extend([
+            "https://api.openai.com/v1/chat/completions",
+            "-H", "Content-Type: application/json",
+            "-H", f"Authorization: Bearer {api_key}",
+            "-d", json.dumps(data)
+        ])
 
-    # print(curl_command)
-    return curl_command
+        # print(curl_command)
+        return curl_command
+    else: # ollama
+        # make prompt
+        prompt = ""
+        for entry in history:
+            content = entry['content']
+            if 'name' in entry:
+                line = f"{entry['name']}: \n{content}"
+            else:
+                line = f"{entry['role']}: \n{content}"
+            prompt += line + "\n"
+
+        if verbose >= 3:
+            print(f"using this prompt: \n{prompt}")
+        data = {
+            "model": model,
+            "prompt": prompt,
+            "format": "json",
+            "stream": False,
+            "raw": True,
+        }
+
+        if verbose >= 3:
+            print("3.1")
+
+        curl_command = ["curl"]
+
+        if verbose < 1:
+            curl_command.append("-s")
+
+        curl_command.extend([
+            "-X",
+            "POST",
+            "http://localhost:11434/api/generate",
+            "-d", json.dumps(data),
+            ])
+
+        if verbose >= 3:
+            print("3.2")
+
+        return curl_command
 
 if selected_chat == -1:
     history = []
@@ -130,12 +188,13 @@ if selected_chat != -1:
         print(f"{entry['content']}\n")
 
 
-system_text = f"""
-you are an agent designed to handle complex tasks. \
+system_text = f"""\
+you are an assistant designed to handle complex tasks. \
 to handle complex tasks, you can split the complex tasks into easier \
-sub-tasks and give them to other agents. you can talk to another agent \
+sub-tasks and give them to agents. you can talk to another agent \
 with the following command: \
 $system_call('agent_name', 'instruction'). \
+Only the assistant is allowed to use this command! \
 if an agent with the name agent_name does not yet exist, it will be \
 created. you can call multiple agents at once and they will respond to you \
 after your message. Create specialized agents to efficiently solve tasks. \
@@ -143,6 +202,9 @@ The maximum amount of agents you are allowed to create is {max_swarm_size-1}. Do
 Make sure to use the correct command syntax when calling an agent: "$system_call('agent_name', 'instruction')"! \
 Don't forget to call this command after you have decided which agents to use.\
 """
+# For example you can interact with an agent like this: $system_call('agent1', 'describe what water is'). \
+# The agent will then reply according to your instruction. You send instructions to the agents using the command, then you wait for their reply.\
+
 
 # system_text = system_text.replace('"', '\\"')
 if selected_chat == -1:
@@ -183,8 +245,12 @@ def say():
         print("3")
 
     try:
+        if verbose >= 3:
+            print("3.3")
+            print(make_curl_command(history))
         process = subprocess.run(make_curl_command(history), shell=False, check=True, stdout=subprocess.PIPE, universal_newlines=True)
         if verbose >= 3:
+            print(process)
             print(process.stdout)
     except Exception as e:
         print(f"----------\nError: \n{e}\n----------")    
@@ -193,8 +259,12 @@ def say():
         print("4")
 
     output = json.loads(process.stdout)
-    role = output['choices'][0]['message']['role']
-    content = output['choices'][0]['message']['content']
+    if use_openai:
+        role = output['choices'][0]['message']['role']
+        content = output['choices'][0]['message']['content']
+    else:
+        role = "assistant"
+        content = output['response']
 
     history.append({"role": role.replace('"', '\\"'), "content": content.replace('"', '\\"')})
 
@@ -285,8 +355,12 @@ while True:
                 print(f"----------\nError: \n{e}\n----------")    
             
             output = json.loads(process.stdout)
-            role = output['choices'][0]['message']['role']
-            content = output['choices'][0]['message']['content']
+            if use_openai:
+                role = output['choices'][0]['message']['role']
+                content = output['choices'][0]['message']['content']
+            else:
+                role = "function"
+                content = output['response']
 
             print(f"--------------------\n{agent_name}")
             print(f"{content}\n")
