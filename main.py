@@ -6,7 +6,7 @@ import time
 import re
 import pickle
 
-max_swarm_size = 5
+max_swarm_size = 10
 verbose = 0
 use_user_input = True
 confirm_each_agent = False
@@ -15,11 +15,11 @@ max_tokens = -1     # only used for openai
 n = 1               # only used for openai
 temperature = 0.7   # only used for openai
 
-use_openai = True # False will use ollama
+use_openai = False # False will use ollama
 
 # model = "gpt-3.5-turbo"
 # model = "gpt-4-1106-preview"
-model = "orca-mini:latest"
+model = "yarn-mistral:7b-128k"
 
 
 
@@ -58,7 +58,7 @@ if not use_openai:
 
 
 # check if KEY.txt exists
-if not os.path.exists("KEY.txt"):
+if use_openai and not os.path.exists("KEY.txt"):
     print("ERROR: KEY.txt does not exist. Please create KEY.txt and paste your API key in it.")
     exit(1)
 
