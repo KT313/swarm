@@ -6,7 +6,7 @@ import time
 import re
 import pickle
 
-max_swarm_size = 5
+max_swarm_size = 10
 verbose = 0
 use_user_input = True
 confirm_each_agent = False
@@ -58,7 +58,7 @@ if not use_openai:
 
 
 # check if KEY.txt exists
-if not os.path.exists("KEY.txt"):
+if use_openai and not os.path.exists("KEY.txt"):
     print("ERROR: KEY.txt does not exist. Please create KEY.txt and paste your API key in it.")
     exit(1)
 
