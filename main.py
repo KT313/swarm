@@ -153,7 +153,8 @@ def check_system_call(input_string):
     pattern = r"\$system_call\('([^']+)',\s*'([^']+)'\)"
     matches = re.findall(pattern, input_string)
     array = [list(match) for match in matches]
-    print(array)
+    if verbose >= 3:
+        print(array)
     return array
 
 
