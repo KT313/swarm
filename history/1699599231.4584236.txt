@@ -1,0 +1,2 @@
+user: say \"hi\" please with quotation
+assistant: \"hi\"
