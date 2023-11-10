@@ -1,6 +1,0 @@
-user: hi
-assistant: Hello! How can I assist you today?
-user: what was my last sentence?
-assistant: Your last sentence was \"hi\".
-user: are you sure?
-assistant: Yes, I am sure. Your last sentence was \"hi\". Is there something else I can help you with?

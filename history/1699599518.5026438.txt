@@ -1,2 +1,0 @@
-user: please write something with quotation marks "
-assistant: "Quotation marks" are punctuation marks used to indicate the exact words spoken or written by someone else. They are a visual representation of dialogue or a direct quote.
